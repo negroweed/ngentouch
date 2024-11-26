@@ -1,7 +1,8 @@
 #!/system/bin/sh
-while [ -z "$(getprop sys.boot_completed)" ]; do
-	sleep 15
+MODDIR=$(dirname "$0")
+until [ -n "$(getprop sys.boot_completed)" ]; do
+	sleep 1
 done
 
 # exec main script
-ntm --apply
+$MODDIR/script/ntm.sh
