@@ -17,6 +17,37 @@ print_warn() {
     ui_print "[WARN] $msg"
 }
 
+test_util_linux() {
+    local bbox="$1"
+    local s=/data/local/tmp/test.sh
+    
+    echo "while true; do sleep 60; done" >$s
+    chmod +x $s
+    
+    # exec dummy script
+    sh $s & local pid=$!
+    
+    # testing
+    if $bbox renice -n -5 -p $pid >/dev/null 2>&1; then
+        local renice=1
+    fi
+    
+    if $bbox chrt -f -p 5 $pid >/dev/null 2>&1; then
+        local chrt=1
+    fi
+    
+    # kill and remove the script
+    kill -TERM $pid
+    rm $s
+    
+    # print the result
+    if [ -n "$renice" ] && [ -n "$chrt" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+    
 ui_print ""
 ui_print "░█▀█░█▀▀░█▀▀░█▀█░▀█▀░█▀█░█░█░█▀▀░█░█
 ░█░█░█░█░█▀▀░█░█░░█░░█░█░█░█░█░░░█▀█
@@ -30,7 +61,7 @@ rm -rf /data/ngentouch
 
 sleep 1
 
-print_info "Finding BusyBox Binary..."
+print_info "Finding Prebuilt BusyBox Binary..."
 sleep 2
 
 if [ -f "/data/adb/ksu/bin/busybox" ]; then
@@ -40,47 +71,31 @@ elif [ -f "/data/adb/ap/bin/busybox" ]; then
 elif [ -f "/data/adb/magisk/busybox" ]; then
     BB_BIN=/data/adb/magisk/busybox
 else
-    print_error "Couldn't find BusyBox binary!"
+    print_error "Couldn't find Prebuilt BusyBox binary!"
 fi
 
-if [ -n "$BB_BIN" ]; then
-    print_info "Found BusyBox binary"
-    ui_print
-    print_info "Testing BusyBox util-linux commands..."
-    
-    # create dummy script
-    s=/data/local/tmp/test.sh
-    echo "while true; do sleep 60; done" >$s
-    chmod +x $s
-    
-    # exec dummy script
-    sh $s & pid=$!
-    
-    # testing
-    if $BB_BIN renice -n -5 -p $pid >/dev/null 2>&1; then
-        print_info "renice command worked properly"
-        renice=1
+busybox_module=$(find /data/adb/modules -name 'busybox')
+
+print_info "Found Prebuilt BusyBox binary"
+ui_print
+print_info "Testing util-linux commands..."
+
+if ! test_util_linux "$BB_BIN"; then
+    if [ -n "$busybox_module" ]; then
+        print_warn "They didn't worked properly."
+        sleep 1
+        print_info "Testing busybox module's util-linux commands..."
+        if test_util_linux "$busybox_module"; then
+            print_info "They worked properly:)"
+            BB_BIN=$busybox_module
+        else
+            print_error "They didn't worked properly, change your busybox module."
+        fi
     else
-        print_warn "renice command didn't work properly"
+        print_info "They didn't worked properly, update your root manager or install busybox module"
     fi
-    
-    if $BB_BIN chrt -f -p 5 $pid >/dev/null 2>&1; then
-        print_info "chrt command worked properly"
-        chrt=1
-    else
-        print_warn "chrt command didn't work properly"
-    fi
-    
-    # kill and remove the script
-    kill -TERM $pid
-    rm $s
-    
-    # print the result
-    if [ -n "$renice" ] && [ -n "$chrt" ]; then
-        print_info "BusyBox util-linux commands worked properly"
-    else
-        print_error "BusyBox util-linux commands didn't work properly!"
-    fi
+else
+    print_info "They worked properly:)"
 fi
 
 ui_print
