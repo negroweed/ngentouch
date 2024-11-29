@@ -12,6 +12,8 @@ touch.distance.scale=0
 touch.coverage.calibration=box
 touch.gestureMode=spots
 debug.input.normalizetouch=true
+persist.vendor.qti.inputopts.movetouchslop=0.1
+persist.vendor.qti.inputopts.enable=true
 
 # Framebuffer
 ro.surface_flinger.max_frame_buffer_acquired_buffers=4

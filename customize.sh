@@ -137,15 +137,7 @@ unzip -o "$ZIPFILE" 'system.prop' -d "$MODPATH" >&2
 # set the BB variable
 sed -i "s|BB=|BB=$BB_BIN|g" $MODPATH/script/ntm.sh
 
-mv -f $TMPDIR/module.prop $MODPATH
-
-if cat /proc/cpuinfo | grep -q 'Qualcomm'; then
-(
-    echo 'persist.vendor.qti.inputopts.movetouchslop=0.1'
-    echo 'persist.vendor.qti.inputopts.enable=true'
-) >>$MODPATH/system.prop
-fi
-
-set_perm_recursive "$MODPATH" 0 0 0777 0777
-
 print_info "Installation Completed, enjoy my module 🙂"
+
+mv -f $TMPDIR/module.prop $MODPATH
+set_perm_recursive "$MODPATH" 0 0 0777 0777
